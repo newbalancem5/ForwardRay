@@ -66,6 +66,8 @@ android/key.properties
 ExportOptions.plist
 .env
 .env.*
+# ...but the bundled Mozilla CA root set IS shipped (public, not a secret)
+!assets/ca/cacert.pem
 
 # OS junk (Windows)
 Thumbs.db
