@@ -326,6 +326,9 @@ class _CoreSetupCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final downloading = state.coreDownloading;
     final pct = (state.coreDownloadProgress * 100).clamp(0, 100).toStringAsFixed(0);
+    final err = state.error;
+    final showError =
+        !downloading && err != null && err != 'CORE_NOT_FOUND' && err != 'NO_NODE';
 
     return SectionCard(
       child: Row(
@@ -364,6 +367,12 @@ class _CoreSetupCard extends StatelessWidget {
                   Text('$pct%',
                       style: TextStyle(
                           fontSize: 12, color: scheme.onSurfaceVariant)),
+                ] else if (showError) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    err,
+                    style: TextStyle(fontSize: 12, color: scheme.error),
+                  ),
                 ],
               ],
             ),

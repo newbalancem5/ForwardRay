@@ -27,6 +27,17 @@ jobs:
       - run: flutter gen-l10n
       - run: flutter build macos --release
 
+      - name: Bundle sing-box core into the .app
+        run: |
+          VER=1.11.15
+          ARCH=$(uname -m); case $ARCH in arm64|aarch64) A=arm64;; *) A=amd64;; esac
+          curl -sL "https://github.com/SagerNet/sing-box/releases/download/v$VER/sing-box-$VER-darwin-$A.tar.gz" | tar xz
+          RES="build/macos/Build/Products/Release/ForwardRay.app/Contents/Resources"
+          mkdir -p "$RES"
+          cp "sing-box-$VER-darwin-$A/sing-box" "$RES/sing-box"
+          chmod +x "$RES/sing-box"
+          cp "sing-box-$VER-darwin-$A/LICENSE" "$RES/sing-box-LICENSE" 2>/dev/null || true
+
       - name: Create DMG (drag-to-Applications)
         run: |
           APP="build/macos/Build/Products/Release/ForwardRay.app"
@@ -61,6 +72,17 @@ jobs:
       - run: flutter pub get
       - run: flutter gen-l10n
       - run: flutter build windows --release
+
+      - name: Bundle sing-box core next to the .exe
+        shell: pwsh
+        run: |
+          $ver = "1.11.15"
+          $arch = if ($env:PROCESSOR_ARCHITECTURE -match "ARM") { "arm64" } else { "amd64" }
+          $url = "https://github.com/SagerNet/sing-box/releases/download/v$ver/sing-box-$ver-windows-$arch.zip"
+          Invoke-WebRequest -Uri $url -OutFile sb.zip
+          Expand-Archive sb.zip -DestinationPath sb -Force
+          Copy-Item "sb/sing-box-$ver-windows-$arch/sing-box.exe" "build/windows/x64/runner/Release/sing-box.exe" -Force
+          Copy-Item "sb/sing-box-$ver-windows-$arch/LICENSE" "build/windows/x64/runner/Release/sing-box-LICENSE.txt" -Force
 
       - name: Build installer (.exe) with Inno Setup
         shell: pwsh

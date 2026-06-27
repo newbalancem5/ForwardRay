@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
+
 import '../../../../core/storage/app_paths.dart';
 
 /// Manages the lifecycle of the bundled/installed `sing-box` core process.
@@ -14,10 +16,17 @@ class SingBoxProcess {
   bool get isRunning => _process != null;
   Stream<String> get logs => _logController.stream;
 
-  /// Finds a usable sing-box binary: installed copy first, then PATH.
+  /// Finds a usable sing-box binary, in order:
+  /// 1) bundled with the app (shipped next to the executable / in the .app),
+  /// 2) a copy downloaded into the app data dir,
+  /// 3) `sing-box` on PATH (handy during development).
   Future<String?> resolveBinary() async {
+    final bundled = _bundledBinary();
+    if (bundled != null) return bundled;
+
     final installed = File(_paths.installedBinaryPath);
     if (installed.existsSync()) return installed.path;
+
     try {
       final which = Platform.isWindows ? 'where' : 'which';
       final res = await Process.run(which, ['sing-box']);
@@ -26,6 +35,21 @@ class SingBoxProcess {
         if (path.isNotEmpty) return path;
       }
     } catch (_) {}
+    return null;
+  }
+
+  /// Looks for a core shipped inside the release build.
+  String? _bundledBinary() {
+    final exeDir = File(Platform.resolvedExecutable).parent.path;
+    final name = _paths.coreBinaryName;
+    final candidates = [
+      p.join(exeDir, name), // Windows: next to .exe · macOS: Contents/MacOS
+      p.join(exeDir, '..', 'Resources', name), // macOS .app bundle Resources
+    ];
+    for (final c in candidates) {
+      final f = File(c);
+      if (f.existsSync()) return f.absolute.path;
+    }
     return null;
   }
 

@@ -21,10 +21,18 @@ class CoreDownloader {
     final url = 'https://github.com/$_repo/releases/download/v$version/$asset';
     final bytes = await _fetch(url, onProgress);
     final binary = _extractBinary(asset, bytes);
-    if (binary == null) {
-      throw const CoreStartFailure('sing-box binary not found in archive');
+    if (binary == null || binary.isEmpty) {
+      throw CoreStartFailure('sing-box binary not found in $asset');
     }
     await _install(binary);
+
+    // Verify the binary survived (Windows Defender sometimes quarantines it).
+    final file = File(_paths.installedBinaryPath);
+    if (!file.existsSync() || await file.length() < 1000000) {
+      throw const CoreStartFailure(
+          'Core file missing after install — it may have been blocked by '
+          'antivirus. Allow sing-box.exe and try again, or install manually.');
+    }
   }
 
   Future<List<int>> _fetch(String url, void Function(double)? onProgress) async {
@@ -61,14 +69,17 @@ class CoreDownloader {
       final tar = GZipDecoder().decodeBytes(bytes);
       archive = TarDecoder().decodeBytes(tar);
     }
+    ArchiveFile? largest;
     for (final file in archive.files) {
       if (!file.isFile) continue;
-      final name = file.name.split('/').last;
-      if (name == 'sing-box' || name == 'sing-box.exe') {
+      final base = file.name.replaceAll('\\', '/').split('/').last.toLowerCase();
+      if (base == 'sing-box' || base == 'sing-box.exe') {
         return file.readBytes();
       }
+      if (largest == null || file.size > largest.size) largest = file;
     }
-    return null;
+    // Fallback: the core binary is by far the largest file in the archive.
+    return largest?.readBytes();
   }
 
   Future<void> _install(List<int> binary) async {
