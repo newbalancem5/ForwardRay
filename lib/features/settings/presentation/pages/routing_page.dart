@@ -23,8 +23,9 @@ class RoutingPage extends StatelessWidget {
       };
 
   Future<void> _save(BuildContext context, AppSettings next) async {
+    final connection = context.read<ConnectionCubit>();
     await context.read<SettingsCubit>().save(next);
-    await context.read<ConnectionCubit>().reconnectIfActive();
+    await connection.reconnectIfActive();
   }
 
   @override
@@ -54,20 +55,24 @@ class RoutingPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    ...RoutingMode.values.map((m) {
-                      return RadioListTile<RoutingMode>(
-                        value: m,
-                        groupValue: mode,
-                        onChanged: (value) {
-                          if (value != null) {
-                            _save(context, settings.copyWith(routingMode: value));
-                          }
-                        },
-                        contentPadding: EdgeInsets.zero,
-                        secondary: Icon(_modeIcon(m)),
-                        title: Text(_modeLabel(l, m)),
-                      );
-                    }),
+                    RadioGroup<RoutingMode>(
+                      groupValue: mode,
+                      onChanged: (value) {
+                        if (value != null) {
+                          _save(context, settings.copyWith(routingMode: value));
+                        }
+                      },
+                      child: Column(
+                        children: RoutingMode.values.map((m) {
+                          return RadioListTile<RoutingMode>(
+                            value: m,
+                            contentPadding: EdgeInsets.zero,
+                            secondary: Icon(_modeIcon(m)),
+                            title: Text(_modeLabel(l, m)),
+                          );
+                        }).toList(),
+                      ),
+                    ),
                   ],
                 ),
               ),

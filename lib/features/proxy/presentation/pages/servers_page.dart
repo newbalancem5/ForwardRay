@@ -110,7 +110,7 @@ class ServersPage extends StatelessWidget {
               }
               return ListView.separated(
                 itemCount: state.nodes.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
                 itemBuilder: (context, i) {
                   final node = state.nodes[i];
                   return _NodeCard(

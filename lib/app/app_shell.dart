@@ -54,8 +54,9 @@ class _AppShellState extends State<AppShell>
   String _trayIconPath() => Platform.isWindows ? 'assets/tray.ico' : 'assets/tray.png';
 
   Future<void> _initTray() async {
+    final connected = context.read<ConnectionCubit>().isConnected;
     await trayManager.setIcon(_trayIconPath());
-    await _rebuildTrayMenu(context.read<ConnectionCubit>().isConnected);
+    await _rebuildTrayMenu(connected);
   }
 
   Future<void> _rebuildTrayMenu(bool connected) async {
