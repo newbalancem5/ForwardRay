@@ -74,3 +74,8 @@ Desktop.ini
 
 # Design sources (bulky export set; runtime icons stay as assets/*.png|*.ico)
 /assets/export/
+
+# Locally-built release artifacts (CI produces these for GitHub Releases)
+/ForwardRay-*.zip
+*.dmg
+*.msix
