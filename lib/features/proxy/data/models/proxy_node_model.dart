@@ -1,0 +1,58 @@
+import '../../domain/entities/proxy_node.dart';
+
+/// JSON serialization for [ProxyNode] (data layer mapper).
+extension ProxyNodeMapper on ProxyNode {
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'protocol': protocol.name,
+        'server': server,
+        'port': port,
+        'uuid': uuid,
+        'password': password,
+        'method': method,
+        'alterId': alterId,
+        'encryption': encryption,
+        'flow': flow,
+        'security': security,
+        'sni': sni,
+        'alpn': alpn,
+        'fingerprint': fingerprint,
+        'allowInsecure': allowInsecure,
+        'realityPublicKey': realityPublicKey,
+        'realityShortId': realityShortId,
+        'network': network,
+        'wsPath': wsPath,
+        'wsHost': wsHost,
+        'grpcServiceName': grpcServiceName,
+        'subscriptionId': subscriptionId,
+        'rawLink': rawLink,
+      };
+}
+
+ProxyNode proxyNodeFromJson(Map<String, dynamic> j) => ProxyNode(
+      id: j['id'] as String,
+      name: j['name'] as String? ?? 'Unnamed',
+      protocol: ProxyProtocolX.fromString(j['protocol'] as String),
+      server: j['server'] as String,
+      port: (j['port'] as num).toInt(),
+      uuid: j['uuid'] as String? ?? '',
+      password: j['password'] as String? ?? '',
+      method: j['method'] as String? ?? '',
+      alterId: (j['alterId'] as num?)?.toInt() ?? 0,
+      encryption: j['encryption'] as String? ?? 'auto',
+      flow: j['flow'] as String? ?? '',
+      security: j['security'] as String? ?? 'none',
+      sni: j['sni'] as String? ?? '',
+      alpn: (j['alpn'] as List?)?.cast<String>() ?? const [],
+      fingerprint: j['fingerprint'] as String? ?? '',
+      allowInsecure: j['allowInsecure'] as bool? ?? false,
+      realityPublicKey: j['realityPublicKey'] as String? ?? '',
+      realityShortId: j['realityShortId'] as String? ?? '',
+      network: j['network'] as String? ?? 'tcp',
+      wsPath: j['wsPath'] as String? ?? '/',
+      wsHost: j['wsHost'] as String? ?? '',
+      grpcServiceName: j['grpcServiceName'] as String? ?? '',
+      subscriptionId: j['subscriptionId'] as String?,
+      rawLink: j['rawLink'] as String? ?? '',
+    );

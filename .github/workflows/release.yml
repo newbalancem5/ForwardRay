@@ -1,0 +1,76 @@
+name: Release
+
+# Build desktop bundles and attach them to a GitHub Release when a version tag
+# is pushed (e.g. `git tag v1.0.0 && git push origin v1.0.0`).
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.1
+          cache: true
+
+      - run: flutter config --enable-macos-desktop
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build macos --release
+
+      - name: Zip .app bundle
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent \
+            "build/macos/Build/Products/Release/ForwardRay.app" \
+            "ForwardRay-macos.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ForwardRay-macos
+          path: ForwardRay-macos.zip
+
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ForwardRay-macos.zip
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.44.1
+          cache: true
+
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: flutter build windows --release
+
+      - name: Zip release bundle
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Release/* `
+            -DestinationPath ForwardRay-windows.zip -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ForwardRay-windows
+          path: ForwardRay-windows.zip
+
+      - name: Attach to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ForwardRay-windows.zip
