@@ -55,55 +55,80 @@ class SubscriptionsPage extends StatelessWidget {
     );
   }
 
-  Future<void> _showAddDialog(BuildContext context) async {
-    final l = AppLocalizations.of(context);
+  void _showAddDialog(BuildContext context) {
     final cubit = context.read<SubscriptionsCubit>();
-    final nameController = TextEditingController();
-    final urlController = TextEditingController();
-
-    await showDialog<void>(
+    showDialog<void>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text(l.addSubscription),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                autofocus: true,
-                decoration: InputDecoration(labelText: l.subscriptionName),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: urlController,
-                decoration: InputDecoration(labelText: l.subscriptionUrl),
-                keyboardType: TextInputType.url,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(l.cancel),
+      builder: (_) => BlocProvider.value(
+        value: cubit,
+        child: const _AddSubscriptionDialog(),
+      ),
+    );
+  }
+}
+
+/// Owns its text controllers so their lifecycle matches the dialog route
+/// (disposed only after the close animation finishes).
+class _AddSubscriptionDialog extends StatefulWidget {
+  const _AddSubscriptionDialog();
+
+  @override
+  State<_AddSubscriptionDialog> createState() => _AddSubscriptionDialogState();
+}
+
+class _AddSubscriptionDialogState extends State<_AddSubscriptionDialog> {
+  final _nameController = TextEditingController();
+  final _urlController = TextEditingController();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _urlController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    final url = _urlController.text.trim();
+    if (url.isEmpty) return;
+    context.read<SubscriptionsCubit>().add(name.isEmpty ? url : name, url);
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return AlertDialog(
+      title: Text(l.addSubscription),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameController,
+              autofocus: true,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(labelText: l.subscriptionName),
             ),
-            FilledButton(
-              onPressed: () {
-                final name = nameController.text.trim();
-                final url = urlController.text.trim();
-                if (url.isEmpty) return;
-                cubit.add(name.isEmpty ? url : name, url);
-                Navigator.of(dialogContext).pop();
-              },
-              child: Text(l.add),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _urlController,
+              keyboardType: TextInputType.url,
+              onSubmitted: (_) => _submit(),
+              decoration: InputDecoration(labelText: l.subscriptionUrl),
             ),
           ],
-        );
-      },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        FilledButton(onPressed: _submit, child: Text(l.add)),
+      ],
     );
-
-    nameController.dispose();
-    urlController.dispose();
   }
 }
 

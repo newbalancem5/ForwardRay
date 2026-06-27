@@ -29,31 +29,15 @@ class ServersPage extends StatelessWidget {
 
   Future<void> _showAddDialog(BuildContext context) async {
     final l = AppLocalizations.of(context);
-    final controller = TextEditingController();
     final text = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.addFromLink),
-        content: SizedBox(
-          width: 460,
-          child: TextField(
-            controller: controller,
-            autofocus: true,
-            minLines: 4,
-            maxLines: 10,
-            decoration: InputDecoration(hintText: l.pasteLinkHint),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text),
-            child: Text(l.add),
-          ),
-        ],
+      builder: (_) => _TextPromptDialog(
+        title: l.addFromLink,
+        confirmLabel: l.add,
+        hint: l.pasteLinkHint,
+        minLines: 4,
+        maxLines: 10,
+        width: 460,
       ),
     );
     if (text == null || text.trim().isEmpty) return;
@@ -177,29 +161,14 @@ class _NodeCard extends StatelessWidget {
 
   Future<void> _rename(BuildContext context) async {
     final l = AppLocalizations.of(context);
-    final controller = TextEditingController(text: node.name);
     final name = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l.renameServer),
-        content: SizedBox(
-          width: 360,
-          child: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: InputDecoration(hintText: node.displayServer),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(l.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, controller.text),
-            child: Text(l.save),
-          ),
-        ],
+      builder: (_) => _TextPromptDialog(
+        title: l.renameServer,
+        confirmLabel: l.save,
+        hint: node.displayServer,
+        initialValue: node.name,
+        width: 360,
       ),
     );
     if (name == null || name.trim().isEmpty) return;
@@ -405,6 +374,73 @@ class _LatencyIndicator extends StatelessWidget {
             color: color,
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Reusable text-input dialog that owns its controller (disposed with the
+/// dialog route). Returns the entered text via Navigator.pop, or null on cancel.
+class _TextPromptDialog extends StatefulWidget {
+  const _TextPromptDialog({
+    required this.title,
+    required this.confirmLabel,
+    this.hint,
+    this.initialValue = '',
+    this.minLines = 1,
+    this.maxLines = 1,
+    this.width = 360,
+  });
+
+  final String title;
+  final String confirmLabel;
+  final String? hint;
+  final String initialValue;
+  final int minLines;
+  final int maxLines;
+  final double width;
+
+  @override
+  State<_TextPromptDialog> createState() => _TextPromptDialogState();
+}
+
+class _TextPromptDialogState extends State<_TextPromptDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialValue);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _confirm() => Navigator.of(context).pop(_controller.text);
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final singleLine = widget.maxLines == 1;
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: widget.width,
+        child: TextField(
+          controller: _controller,
+          autofocus: true,
+          minLines: widget.minLines,
+          maxLines: widget.maxLines,
+          textInputAction:
+              singleLine ? TextInputAction.done : TextInputAction.newline,
+          onSubmitted: singleLine ? (_) => _confirm() : null,
+          decoration: InputDecoration(hintText: widget.hint),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l.cancel),
+        ),
+        FilledButton(onPressed: _confirm, child: Text(widget.confirmLabel)),
       ],
     );
   }

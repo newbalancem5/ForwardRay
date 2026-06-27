@@ -46,8 +46,8 @@ The config targets the stable **sing-box 1.11.x** schema (DNS hijack / reject vi
 
 Grab the latest build from the [**Releases**](../../releases) page:
 
-- **macOS** — `ForwardRay-macos.zip` → unzip → drag `ForwardRay.app` to Applications.
-- **Windows** — `ForwardRay-windows.zip` → unzip → run `ForwardRay.exe`.
+- **macOS** — `ForwardRay-macos.dmg` → open → drag **ForwardRay** into Applications.
+- **Windows** — `ForwardRay-windows-setup.exe` → run the installer (or use the portable `ForwardRay-windows-portable.zip`).
 
 Then: open the app → it fetches the core automatically → add a server (link or subscription) → press connect. That's it.
 

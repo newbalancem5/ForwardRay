@@ -1,7 +1,7 @@
 name: Release
 
-# Build desktop bundles and attach them to a GitHub Release when a version tag
-# is pushed (e.g. `git tag v1.0.0 && git push origin v1.0.0`).
+# Build installers and attach them to a GitHub Release when a version tag is
+# pushed (e.g. `git tag v1.0.0 && git push origin v1.0.0`).
 on:
   push:
     tags:
@@ -27,21 +27,24 @@ jobs:
       - run: flutter gen-l10n
       - run: flutter build macos --release
 
-      - name: Zip .app bundle
+      - name: Create DMG (drag-to-Applications)
         run: |
-          ditto -c -k --sequesterRsrc --keepParent \
-            "build/macos/Build/Products/Release/ForwardRay.app" \
-            "ForwardRay-macos.zip"
+          APP="build/macos/Build/Products/Release/ForwardRay.app"
+          STAGE="$(mktemp -d)"
+          cp -R "$APP" "$STAGE/"
+          ln -s /Applications "$STAGE/Applications"
+          hdiutil create -volname "ForwardRay" \
+            -srcfolder "$STAGE" -ov -format UDZO "ForwardRay-macos.dmg"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ForwardRay-macos
-          path: ForwardRay-macos.zip
+          name: ForwardRay-macos-dmg
+          path: ForwardRay-macos.dmg
 
       - name: Attach to release
         uses: softprops/action-gh-release@v2
         with:
-          files: ForwardRay-macos.zip
+          files: ForwardRay-macos.dmg
 
   build-windows:
     runs-on: windows-latest
@@ -59,18 +62,29 @@ jobs:
       - run: flutter gen-l10n
       - run: flutter build windows --release
 
-      - name: Zip release bundle
+      - name: Build installer (.exe) with Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          $ver = "${{ github.ref_name }}".TrimStart('v')
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DMyAppVersion=$ver installer\forwardray.iss
+
+      - name: Zip portable build
         shell: pwsh
         run: |
           Compress-Archive -Path build/windows/x64/runner/Release/* `
-            -DestinationPath ForwardRay-windows.zip -Force
+            -DestinationPath ForwardRay-windows-portable.zip -Force
 
       - uses: actions/upload-artifact@v4
         with:
           name: ForwardRay-windows
-          path: ForwardRay-windows.zip
+          path: |
+            ForwardRay-windows-setup.exe
+            ForwardRay-windows-portable.zip
 
       - name: Attach to release
         uses: softprops/action-gh-release@v2
         with:
-          files: ForwardRay-windows.zip
+          files: |
+            ForwardRay-windows-setup.exe
+            ForwardRay-windows-portable.zip
